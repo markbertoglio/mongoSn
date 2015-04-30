@@ -1,0 +1,20 @@
+{
+  "name": "mongosn",
+  "version": "0.0.1",
+  "description": "Fetch mongoSn",
+  "main": "mongosn.js",
+  "directories": {},
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/markbertoglio/mongoSn.git"
+  },
+  "author": "Mark Bertoglio",
+  "license": "MIT",
+  "bugs": {},
+  "dependencies": {
+    "length": "0.0.1",
+    "mongodb": "^2.0.25",
+    "underscore": "^1.8.2"
+  }
+}
