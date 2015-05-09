@@ -6,90 +6,101 @@ module.exports = MongoSn;
 function MongoSn(ssApiHost, ssApiPort) {
   this.ssApiHost = ssApiHost;
   this.ssApiPort = ssApiPort;
+  console.log("SET", this)
 }
-  
+
+MongoSn.prototype.loginUser = function(email, password, done) {
+  return _loginUser(this.ssApiHost, this.ssApiPort, email, password, done)
+}; 
+
 MongoSn.prototype.userMongoSnConnection = function(email, password, done) {
+  var self = this;
+  
+  _loginUser(this.ssApiHost, this.ssApiPort, email, password, onLogin);
+
+  function onLogin(err, sessionToken) {
+    if (err) return done(err);
+    doPost(self.ssApiHost, self.ssApiPort, 
+            '/api/1.0/get-service-endpoint', {serviceName: 'mongodb'}, 
+            sessionToken, onGetServiceEndpoint);
+  }
+
+  function onGetServiceEndpoint(err, result) {
+    if (err) return done(err);
+    if (!result || !result.result) return done("missing result");
+    var dbInfo = result.result;
+    var mongoUrl = "mongodb://" + (dbInfo.v4 || dbInfo.v6) + ":" + dbInfo.port + "/" + dbInfo.mongoDb + "?maxPoolSize=1";
+    mongodb.connect(mongoUrl, onMongoConnect);
+
+    function onMongoConnect(err, db) {
+      if (err) return done(err);
+      var adminDb = db.admin();
+      adminDb.authenticate(dbInfo.mongoUser, dbInfo.mongoPassword, 
+                           function(err, result) {
+        if (err) {
+          db.close();
+          return done(err);
+        }
+        return done(null, db);
+      });
+    }
+  }
+};
+
+MongoSn.prototype.adminMongoSnConnection = function(adminEmail, adminPassword, userEmail, done) {
+  var self = this;
+  
+  _loginUser(this.ssApiHost, this.ssApiPort, adminEmail, adminPassword, onLogin);
+  
+  function onLogin(err, sessionToken) {
+    if (err) return done(err);
+    doPost(self.ssApiHost, self.ssApiPort, '/api/1.0/admin/get-service-endpoint', 
+           {serviceName: 'mongodb', email: userEmail}, 
+           sessionToken, onGetServiceEndpoint);
+  }
+
+  function onGetServiceEndpoint(err, result) {
+    if (err) return done(err);
+    if (!result || !result.result) return done("missing result");
+    var dbInfo = result.result;
+    var mongoUrl = "mongodb://" + (dbInfo.v4 || dbInfo.v6) + ":" + dbInfo.port + "/" + dbInfo.mongoDb + "?maxPoolSize=1";
+    mongodb.connect(mongoUrl, onMongoConnect);
+
+    function onMongoConnect(err, db) {
+      if (err) return done(err);
+      var adminDb = db.admin();
+      adminDb.authenticate(dbInfo.mongoUser, dbInfo.mongoPassword, 
+                           function(err, result) {
+        if (err) {
+          db.close();
+          return done(err);
+        }
+        return done(null, db);
+      });
+    }
+  }
+};
+
+function _loginUser(host, port, email, password, done) {
+  var self = this;
   var creds = {
     email: email,
     password: password
   };
-  var self = this;
 
-  doPost(self.ssApiHost, self.ssApiPort, '/api/1.0/unauth/login-user', creds, onLogin);
-
-  function onLogin(err, result) {
-    if (err) return done(err);
-    if (!result.result || !result.result.sessionToken) 
-      return done("login failed");
-    doPost(self.ssApiHost, self.ssApiPort, '/api/1.0/get-service-endpoint', {serviceName: 'mongodb'}, 
-           result.result.sessionToken, onGetServiceEndpoint);
-  }
-
-  function onGetServiceEndpoint(err, result) {
-    if (err) return done(err);
-    if (!result || !result.result) return done("missing result");
-    var dbInfo = result.result;
-    var mongoUrl = "mongodb://" + (dbInfo.v4 || dbInfo.v6) + ":" + dbInfo.port + "/" + dbInfo.mongoDb + "?maxPoolSize=1";
-    mongodb.connect(mongoUrl, onMongoConnect);
-
-    function onMongoConnect(err, db) {
-      if (err) return done(err);
-      var adminDb = db.admin();
-      adminDb.authenticate(dbInfo.mongoUser, dbInfo.mongoPassword, 
-                           function(err, result) {
-        if (err) {
-          db.close();
-          return done(err);
-        }
-        return done(null, db);
-      });
-    }
-  }
-}
-
-MongoSn.prototype.adminMongoSnConnection = function(adminEmail, adminPassword, userEmail, done) {
-  var creds = {
-    email: adminEmail,
-    password: adminPassword
-  };
-  var self = this;
-  
-  doPost(self.ssApiHost, self.ssApiPort, '/api/1.0/unauth/login-user', creds, onLogin);
+  doPost(host, port, '/api/1.0/unauth/login-user', creds, null, onLogin);
 
   function onLogin(err, result) {
     if (err) return done(err);
-    if (!result.result || !result.result.sessionToken) 
+    if (!result.result || !result.result.sessionToken) { 
       return done("login failed");
-    doPost(self.ssApiHost, self.ssApiPort, '/api/1.0/admin/get-service-endpoint', 
-           {serviceName: 'mongodb', email: userEmail}, 
-           result.result.sessionToken, onGetServiceEndpoint);
-  }
-
-  function onGetServiceEndpoint(err, result) {
-    if (err) return done(err);
-    if (!result || !result.result) return done("missing result");
-    var dbInfo = result.result;
-    var mongoUrl = "mongodb://" + (dbInfo.v4 || dbInfo.v6) + ":" + dbInfo.port + "/" + dbInfo.mongoDb + "?maxPoolSize=1";
-    mongodb.connect(mongoUrl, onMongoConnect);
-
-    function onMongoConnect(err, db) {
-      if (err) return done(err);
-      var adminDb = db.admin();
-      adminDb.authenticate(dbInfo.mongoUser, dbInfo.mongoPassword, 
-                           function(err, result) {
-        if (err) {
-          db.close();
-          return done(err);
-        }
-        return done(null, db);
-      });
     }
-  }
-}
-
+    return done(null, result.result.sessionToken);
+  }  
+} 
 
 function doPost(host, port, path, body, session, done) {
-
+  console.log("PST", host, port)
   if (typeof session == 'function') {
     done = session;
     session = null;
