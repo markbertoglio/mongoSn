@@ -11,6 +11,10 @@ function MongoSn(ssApiHost, ssApiPort) {
 
 MongoSn.prototype.loginUser = function(email, password, done) {
   return _loginUser(this.ssApiHost, this.ssApiPort, email, password, done)
+};
+
+MongoSn.prototype.getMailboxes = function(sessionToken, done) {
+  doPost(this.ssApiHost, this.ssApiPort, '/api/1.0/get-mailboxes', null, sessionToken, done); 
 }; 
 
 MongoSn.prototype.userMongoSnConnection = function(email, password, done) {
@@ -100,17 +104,17 @@ function _loginUser(host, port, email, password, done) {
 } 
 
 function doPost(host, port, path, body, session, done) {
-  console.log("PST", host, port)
   if (typeof session == 'function') {
     done = session;
     session = null;
   }
-  var bodyStr = JSON.stringify(body);
-
-  var headers = {
-    'Content-Type': 'application/json',
-    'Content-Length': bodyStr.length
-  };
+  var bodyStr = null;
+  var headers = {};
+  if (body) {
+    bodyStr = JSON.stringify(body);
+    headers['Content-Type'] = 'application/json';
+    headers['Content-Length'] = bodyStr.length;
+  }
 
   if (session) headers['session-token'] = session; 
 
@@ -143,6 +147,6 @@ function doPost(host, port, path, body, session, done) {
     done(e);
   });
 
-  req.write(bodyStr);
+  if (bodyStr) req.write(bodyStr);
   req.end();
 }
