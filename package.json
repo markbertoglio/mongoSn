@@ -1,6 +1,6 @@
 {
   "name": "mongosn",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Fetch mongoSn",
   "main": "mongosn.js",
   "directories": {},
