@@ -6,7 +6,6 @@ module.exports = MongoSn;
 function MongoSn(ssApiHost, ssApiPort) {
   this.ssApiHost = ssApiHost;
   this.ssApiPort = ssApiPort;
-  console.log("SET", this)
 }
 
 MongoSn.prototype.loginUser = function(email, password, done) {
@@ -16,6 +15,14 @@ MongoSn.prototype.loginUser = function(email, password, done) {
 MongoSn.prototype.getMailboxes = function(sessionToken, done) {
   doPost(this.ssApiHost, this.ssApiPort, '/api/1.0/get-mailboxes', null, sessionToken, done); 
 }; 
+
+MongoSn.prototype.createMailbox = function(sessionToken, mailboxName, parentMailboxId, done) {
+  var create = {
+    mailboxName: mailboxName,
+    parentMailboxId: parentMailboxId
+  };
+  doPost(this.ssApiHost, this.ssApiPort, '/api/1.0/create-mailbox', create, sessionToken, done); 
+};
 
 MongoSn.prototype.userMongoSnConnection = function(email, password, done) {
   var self = this;
