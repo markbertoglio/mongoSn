@@ -13,7 +13,12 @@ MongoSn.prototype.loginUser = function(email, password, done) {
 };
 
 MongoSn.prototype.getMailboxes = function(sessionToken, done) {
-  doPost(this.ssApiHost, this.ssApiPort, '/api/1.0/get-mailboxes', null, sessionToken, done); 
+  doPost(this.ssApiHost, this.ssApiPort, '/api/1.0/get-mailboxes', null, sessionToken, onGet);
+  function onGet(err, result) {
+    if (err) return done(err);
+    if (result && result.err) return done(result.err);
+    return done(null, result && result.result);
+  }
 }; 
 
 MongoSn.prototype.createMailbox = function(sessionToken, mailboxName, parentMailboxId, done) {
@@ -21,7 +26,12 @@ MongoSn.prototype.createMailbox = function(sessionToken, mailboxName, parentMail
     mailboxName: mailboxName,
     parentMailboxId: parentMailboxId
   };
-  doPost(this.ssApiHost, this.ssApiPort, '/api/1.0/create-mailbox', create, sessionToken, done); 
+  doPost(this.ssApiHost, this.ssApiPort, '/api/1.0/create-mailbox', create, sessionToken, onCreated); 
+  function onCreated(err, result) {
+    if (err) return done(err);
+    if (result && result.err) return done(result.err);
+    return done(null, result && result.result);
+  }
 };
 
 MongoSn.prototype.userMongoSnConnection = function(email, password, done) {
