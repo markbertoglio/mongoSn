@@ -34,6 +34,19 @@ MongoSn.prototype.createMailbox = function(sessionToken, mailboxName, parentMail
   }
 };
 
+MongoSn.prototype.renameMailbox = function(sessionToken, mailboxId, newName, done) {
+  var rename = {
+    mailboxId: mailboxId,
+    newName: newName
+  };
+  doPost(this.ssApiHost, this.ssApiPort, '/api/1.0/rename-mailbox', rename, sessionToken, onRename); 
+  function onRename(err, result) {
+    if (err) return done(err);
+    if (result && result.err) return done(result.err);
+    return done(null, result && result.result);
+  }  
+};
+
 MongoSn.prototype.userMongoSnConnection = function(email, password, done) {
   var self = this;
   

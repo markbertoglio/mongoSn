@@ -6,9 +6,13 @@ ms.loginUser('bv@sirro.net', 'password1', function(err, sessionToken) {
 	ms.getMailboxes(sessionToken, function(err, result) {
 		if (err) return console.log("get-mailboxes", err);
 		var mailboxes = result.data;
-		ms.createMailbox(sessionToken, "susub3", "55577dd7bc82c5752cc36b4e", function(err, result) {
+		ms.createMailbox(sessionToken, "susub5", null, function(err, result) {
 			if (err) return console.log("ERR", err);
-			console.log("RESULT", JSON.stringify(result, null, 2));
+			console.log("Create", JSON.stringify(result, null, 2));
+			ms.renameMailbox(sessionToken, result._id, "ren_subSub5", function(err, result) {
+				if (err) return console.log("ERR", err);
+				console.log("Rename", JSON.stringify(result, null, 2));
+			});
 		});
 	});
 });
